@@ -1,0 +1,5 @@
+# Executável compilado
+output/ 
+
+# Arquivos do VS Code (opcional — remova as linhas abaixo se quiser versionar as configurações)
+.vscode/
