@@ -1,5 +1,7 @@
 import datetime
 import re
+
+from datetime import date
 from validate_docbr import CPF
 
 class Endereco:
@@ -19,7 +21,7 @@ class Endereco:
 
 class Usuario:
     def __init__(self, cpf: str, nome: str,
-                 data_de_nascimento: str, endereco: Endereco):
+                 data_de_nascimento: date, endereco: Endereco):
         self.cpf = cpf
         self.nome = nome
         self.data_de_nascimento = data_de_nascimento
@@ -32,16 +34,6 @@ class Usuario:
         )
 
 class Conta:
-    """
-    Representa uma conta bancária vinculada a um Usuario.
-
-    Correções aplicadas:
-    - Recebe objeto Usuario em vez de cpf/nome soltos (sem duplicação de dados).
-    - Atributos de instância definidos apenas no __init__.
-    - data_atual capturada dentro dos próprios métodos (sem variável global).
-    - Método mostrar_extrato retorna string em vez de imprimir diretamente.
-    - LIMITE_SAQUE permanece como constante de classe (maiúsculas).
-    """
 
     LIMITE_SAQUE = 3
     VALOR_MAXIMO_SAQUE = 500.0
@@ -49,12 +41,10 @@ class Conta:
     def __init__(self, numero_conta: int, usuario: Usuario):
         self.AGENCIA = "0001"
         self.numero_conta = numero_conta
-        self.usuario = usuario          # referência ao objeto, sem duplicar dados
+        self.usuario = usuario         
         self._saldo = 0.0
-        self._extrato: list[str] = []
-        self._numero_saques = 0         # prefixo _ indica atributo de instância interno
-
-    #  propriedades de leitura 
+        self._extrato: list[Movimentacao] = []
+        self._numero_saques = 0         
 
     @property
     def saldo(self) -> float:
@@ -62,14 +52,11 @@ class Conta:
 
     @property
     def cpf(self) -> str:
-        """Atalho para manter compatibilidade com filtros por CPF."""
         return self.usuario.cpf
 
     @property
     def nome(self) -> str:
         return self.usuario.nome
-
-    #  representação 
 
     def __str__(self) -> str:
         return (
@@ -79,34 +66,22 @@ class Conta:
         )
 
     def info(self) -> str:
-        """Retorna string formatada para exibição em listagens."""
         return (
             f"-----------\n"
             f"{self.usuario.nome.upper()}   (CPF: {self.usuario.cpf})\n"
             f"Conta: {self.numero_conta}  -  Agência: {self.AGENCIA}\n"
         )
 
-    #  operações 
-
     def depositar(self, valor: float) -> bool:
-        """
-        Realiza depósito.
-        Retorna True em sucesso, False em falha.
-        Mensagens de UI ficam nas funções de menu.
-        """
         if valor <= 0:
             return False
 
         self._saldo += valor
-        data = datetime.datetime.now().strftime("%d/%m/%Y %H:%M")
-        self._extrato.append(f"DEPÓSITO: R$ {valor:.2f} - {data}")
+        self._extrato.append(Movimentacao("DEPOSITO", valor))
         return True
 
     def sacar(self, valor: float) -> tuple[bool, str]:
-        """
-        Realiza saque.
-        Retorna (sucesso: bool, mensagem: str) para que a UI exiba o resultado.
-        """
+
         if valor <= 0:
             return False, "Valor inválido."
         if valor > self.VALOR_MAXIMO_SAQUE:
@@ -118,12 +93,10 @@ class Conta:
 
         self._saldo -= valor
         self._numero_saques += 1
-        data = datetime.datetime.now().strftime("%d/%m/%Y %H:%M")
-        self._extrato.append(f"SAQUE:    R$ {valor:.2f} - {data}")
+        self._extrato.append(Movimentacao("SAQUE", valor))
         return True, f"Saque de R$ {valor:.2f} realizado. Saldo: R$ {self._saldo:.2f}"
 
     def extrato(self) -> str:
-        """Retorna o extrato formatado como string."""
         linha = "-" * 51
         cabecalho = f"{'-' * 21} EXTRATO {'-' * 21}"
         linhas = [cabecalho, ""]
@@ -132,18 +105,25 @@ class Conta:
             linhas.append("Nenhuma movimentação registrada.")
         else:
             for operacao in self._extrato:
-                descricao, data = operacao.split(" - ", 1)
-                linhas.append(descricao.ljust(30) + data.rjust(20))
+                linhas.append(str(operacao))
 
         linhas += ["", f"SALDO: R$ {self._saldo:.2f}", linha, ""]
         return "\n".join(linhas)
 
-class Banco:
-    """
-    Gerencia coleções de usuários e contas.
-    Recebe dados prontos (sem input()); quem chama é responsável por coletar.
-    """
+class Movimentacao:
 
+    def __init__(self, tipo: str, valor: float):
+        self.tipo    = tipo                              # "DEPÓSITO" ou "SAQUE"
+        self.valor   = valor
+        self.data    = datetime.datetime.now()           # guarda o objeto, não a string
+
+    def __str__(self) -> str:
+        data_fmt = self.data.strftime("%d/%m/%Y %H:%M")
+        descricao = f"{self.tipo}: R$ {self.valor:.2f}"
+        return descricao.ljust(30) + data_fmt.rjust(20)
+
+
+class Banco:
     def __init__(self):
         self._usuarios: list[Usuario] = []
         self._contas: list[Conta] = []
@@ -187,149 +167,158 @@ class Banco:
     def contas(self) -> list[Conta]:
         return list(self._contas)   # cópia defensiva
 
+class Menu:
 
+    def __init__(self, banco: Banco):  
+        self.banco = banco
 
-def _coletar_endereco() -> Endereco:
-    logradouro = input("Logradouro: ")
-    numero     = input("Número: ")
-    bairro     = input("Bairro: ")
-    cidade     = input("Cidade: ")
-    sigla      = input("Sigla do Estado: ")
-    return Endereco(logradouro, numero, bairro, cidade, sigla)
+    def _coletar_endereco(self) -> Endereco:
+        logradouro = input("Logradouro: ")
+        numero     = input("Número: ")
+        bairro     = input("Bairro: ")
+        cidade     = input("Cidade: ")
+        sigla      = input("Sigla do Estado: ")
+        return Endereco(logradouro, numero, bairro, cidade, sigla)
 
-def _coletar_e_cadastrar_usuario(banco: Banco, cpf: str) -> bool:
-    print("─── CADASTRAR USUÁRIO ───")
-    nome               = input("Nome completo: ")
-    data_de_nascimento = input("Data de nascimento (dd/mm/aaaa): ")
-    endereco           = _coletar_endereco()
-    if banco.cadastrar_usuario(cpf, nome, data_de_nascimento, endereco):
-        print("Usuário cadastrado com sucesso!\n")
-        return True
-    print("Usuário já cadastrado.")
-    return False
+    def _coletar_e_cadastrar_usuario(self, cpf: str) -> bool:
+        print(f"\nCADASTRAR USUÁRIO")
+        nome               = input("Nome completo: ").upper()
+        data_de_nascimento = input("Data de nascimento (dd/mm/aaaa): ")
+        endereco           = self._coletar_endereco()
+        if self.banco.cadastrar_usuario(cpf, nome, data_de_nascimento, endereco):
+            print("Usuário cadastrado com sucesso!\n")
+            return True
+        print("Usuário já cadastrado.")
+        return False
+    
+    def menu_conta(self, cpf: str):
 
-def menu_conta(banco: Banco, cpf: str):
+        while True:
+            print(
+                "\n========== MENU ==========\n"
+                "[e] Entrar em uma conta\n"
+                "[a] Abrir nova conta\n"
+                "[lc] Listar TODAS as contas\n"
+                "[q] Sair\n"
+                "=========================="
+            )
+            opcao = input("Digite uma opção: ").strip().lower()
 
-    while True:
-        print(
-            "\n========== MENU ==========\n"
-            "[e] Entrar em uma conta\n"
-            "[a] Abrir nova conta\n"
-            "[lc] Listar TODAS as contas\n"
-            "[q] Sair\n"
-            "=========================="
-        )
-        opcao = input("Digite uma opção: ").strip().lower()
+            if opcao == "e":
+                contas_usuario = self.banco.filtrar_contas(cpf)
+                if not contas_usuario:
+                    print("Nenhuma conta encontrada para este CPF.")
+                    continue
 
-        if opcao == "e":
-            contas_usuario = banco.filtrar_contas(cpf)
-            if not contas_usuario:
-                print("Nenhuma conta encontrada para este CPF.")
-                continue
+                try:
+                    numero = int(input("Digite o número da conta: "))
+                except ValueError:
+                    print("Número de conta inválido.")
+                    continue
 
-            try:
-                numero = int(input("Digite o número da conta: "))
-            except ValueError:
-                print("Número de conta inválido.")
-                continue
+                conta = self.banco.buscar_conta(cpf, numero)
+                if not conta:
+                    print("Conta não encontrada.")
+                    continue
 
-            conta = banco.buscar_conta(cpf, numero)
-            if not conta:
-                print("Conta não encontrada.")
-                continue
+                print("LOGIN REALIZADO!")
+                return cpf, conta
 
-            print("LOGIN REALIZADO!")
-            return cpf, conta
+            elif opcao == "a":
+                if not self.banco.buscar_usuario(cpf):
+                    print("Usuário não cadastrado.")
+                    self._coletar_e_cadastrar_usuario(cpf)
 
-        elif opcao == "a":
-            if not banco.buscar_usuario(cpf):
-                print("Usuário não cadastrado.")
-                _coletar_e_cadastrar_usuario(banco, cpf)
+                nova = self.banco.cadastrar_conta(cpf)
+                if nova:
+                    print(f"Conta criada com sucesso!\n{nova}")
+                else:
+                    print("Não foi possível criar a conta.")
 
-            nova = banco.cadastrar_conta(cpf)
-            if nova:
-                print(f"Conta criada com sucesso!\n{nova}")
+            elif opcao == "lc":
+                contas = self.banco.contas
+                if contas:
+                    for c in contas:
+                        print(c.info())
+                else:
+                    print("Nenhuma conta cadastrada.")
+
+            elif opcao == "q":
+                print("Obrigado pela confiança!")
+                return "quit"
+
             else:
-                print("Não foi possível criar a conta.")
+                print("Opção inválida!")
 
-        elif opcao == "lc":
-            contas = banco.contas
-            if contas:
-                for c in contas:
+    def menu_operacoes(self, cpf: str, conta: Conta) -> None:
+        while True:
+            print(
+                "\n========== MENU ==========\n"
+                " [d]  Depositar\n"
+                " [s]  Sacar\n"
+                " [e]  Extrato\n"
+                " [lc] Listar minhas contas\n"
+                " [q]  Sair\n"
+                "=========================="
+            )
+            opcao = input("Escolha: ").strip().lower()
+
+            if opcao == "d":
+                try:
+                    valor = float(input("Valor do depósito: R$ "))
+                except ValueError:
+                    print("Valor inválido.")
+                    continue
+
+                if conta.depositar(valor):
+                    print(f"Depósito de R$ {valor:.2f} realizado. Saldo: R$ {conta.saldo:.2f}")
+                else:
+                    print("Não é possível depositar valor inválido ou negativo.")
+
+            elif opcao == "s":
+                try:
+                    valor = float(input("Valor do saque: R$ "))
+                except ValueError:
+                    print("Valor inválido.")
+                    continue
+
+                sucesso, mensagem = conta.sacar(valor)
+                print(mensagem if sucesso else f"Erro: {mensagem}")
+
+            elif opcao == "e":
+                print(conta.extrato())
+
+            elif opcao == "lc":
+                for c in self.banco.filtrar_contas(cpf):
                     print(c.info())
+
+            elif opcao == "q":
+                print("Encerrando operação.")
+                break
+
             else:
-                print("Nenhuma conta cadastrada.")
-
-        elif opcao == "q":
-            print("Obrigado pela confiança!")
-            return "quit"
-
-        else:
-            print("Opção inválida!")
-
-def menu_operacoes(banco: Banco, cpf: str, conta: Conta) -> None:
-    while True:
-        print(
-            "\n========== MENU ==========\n"
-            " [d]  Depositar\n"
-            " [s]  Sacar\n"
-            " [e]  Extrato\n"
-            " [lc] Listar minhas contas\n"
-            " [q]  Sair\n"
-            "=========================="
-        )
-        opcao = input("Escolha: ").strip().lower()
-
-        if opcao == "d":
-            try:
-                valor = float(input("Valor do depósito: R$ "))
-            except ValueError:
-                print("Valor inválido.")
-                continue
-
-            if conta.depositar(valor):
-                print(f"Depósito de R$ {valor:.2f} realizado. Saldo: R$ {conta.saldo:.2f}")
-            else:
-                print("Não é possível depositar valor inválido ou negativo.")
-
-        elif opcao == "s":
-            try:
-                valor = float(input("Valor do saque: R$ "))
-            except ValueError:
-                print("Valor inválido.")
-                continue
-
-            sucesso, mensagem = conta.sacar(valor)
-            print(mensagem if sucesso else f"Erro: {mensagem}")
-
-        elif opcao == "e":
-            print(conta.extrato())
-
-        elif opcao == "lc":
-            for c in banco.filtrar_contas(cpf):
-                print(c.info())
-
-        elif opcao == "q":
-            print("Encerrando operação.")
-            break
-
-        else:
-            print("Opção inválida!")
+                print("Opção inválida!")
 
 
 def main() -> None:
     banco = Banco()
     validador_cpf = CPF()
+    menu_banco = Menu(banco)
 
     while True:
-        cpf_digitado = input("\nDigite o seu CPF: ")
+        cpf_digitado = input("\nDigite o seu CPF (ou sair): ")
+
+        if cpf_digitado == "sair":
+            print("Obrigado pela confiança!")
+            break
+
         cpf_digitado = re.sub(r'\D', '', cpf_digitado)
 
         if not validador_cpf.validate(cpf_digitado):
             print("CPF inválido!")
             continue
 
-        resultado = menu_conta(banco, cpf_digitado)
+        resultado = menu_banco.menu_conta(cpf_digitado)
 
         if resultado == "quit":
             break
@@ -337,7 +326,7 @@ def main() -> None:
             continue
 
         cpf, conta = resultado
-        menu_operacoes(banco, cpf, conta)
+        menu_banco.menu_operacoes(cpf, conta)
 
 if __name__ == "__main__":
     main()

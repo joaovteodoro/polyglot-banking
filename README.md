@@ -4,7 +4,8 @@
 ![Java](https://img.shields.io/badge/Java-ED8B00?style=flat&logo=openjdk&logoColor=white)
 ![C++](https://img.shields.io/badge/C++-00599C?style=flat&logo=c%2B%2B&logoColor=white)
 
-Sistema bancário desenvolvido como projeto do Bootcamp em parceria com a DIO. O objetivo inicial era implementar o sistema em Python com orientação a objetos — decidi reimplementar o mesmo sistema em **Java** e **C++**, explorando como cada linguagem lida com os mesmos conceitos de POO.
+Sistema bancário desenvolvido como projeto do Bootcamp em parceria com a DIO. O objetivo inicial era implementar o sistema em **Python** com orientação a objetos — decidi reimplementar o mesmo sistema em **Java** e **C++**, explorando como cada linguagem lida com os mesmos conceitos de POO.
+
 ---
 
 ## Organização do repositório
@@ -24,7 +25,56 @@ Cada diretório contém um `README.md` próprio com instruções de como compila
 
 ## Como rodar (exemplo rápido — Python)
 
-Consulte o README de cada linguagem para os pré-requisitos e comandos específicos.
+Consulte o README.md de cada linguagem para os pré-requisitos e comandos específicos.
+
+---
+
+## Estrutura de Classes
+
+```
+Banco
+├── Usuario
+│   └── Endereco
+├── Conta
+│   └── Movimentacao
+└── Menu
+```
+
+### `Endereco`
+Armazena o endereço completo de um usuário: logradouro, número, bairro, cidade e sigla do estado.
+
+### `Usuario`
+Representa um cliente do banco. Possui CPF, nome, data de nascimento e um objeto `Endereco`.
+
+### `Conta`
+Conta bancária vinculada a um `Usuario`. Armazena saldo, extrato e histórico de saques.
+
+### `Movimentacao`
+Representa uma operação financeira individual (depósito ou saque). Armazena o tipo, valor e data/hora da operação.
+
+### `Banco`
+Gerencia as coleções de usuários e contas. Responsável por cadastros e buscas.
+
+### `Menu`
+Camada de interface com o usuário. Responsável por toda leitura de input e exibição de mensagens. Agrupa os menus de acesso à conta e de operações financeiras.
+
+---
+
+## Regras de Negócio
+
+### Depósito
+- O valor deve ser maior que zero.
+
+### Saque
+- O valor deve ser maior que zero.
+- Limite máximo por saque: **R$ 500,00**.
+- O saldo disponível deve ser suficiente.
+- Máximo de **3 saques por dia**.
+
+### Extrato
+- Exibe todas as movimentações com data e hora.
+- Exibe o saldo atual ao final.
+- Caso não haja movimentações, exibe `"Nenhuma movimentação registrada."`.
 
 ---
 
@@ -53,24 +103,6 @@ Ao iniciar, o sistema solicita e valida um CPF.
 | `[e]` Extrato | Exibe histórico de movimentações e saldo atual |
 | `[lc]` Listar minhas contas | Lista todas as contas vinculadas ao CPF |
 | `[q]` Sair | Retorna ao menu anterior |
-
----
-
-## Regras de Negócio
-
-### Depósito
-- O valor deve ser maior que zero.
-
-### Saque
-- O valor deve ser maior que zero.
-- Limite máximo por saque: **R$ 500,00**.
-- O saldo disponível deve ser suficiente.
-- Máximo de **3 saques por dia**.
-
-### Extrato
-- Exibe todas as movimentações com data e hora.
-- Exibe o saldo atual ao final.
-- Caso não haja movimentações, exibe `"Nenhuma movimentação registrada."`.
 
 ---
 

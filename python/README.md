@@ -1,5 +1,7 @@
 # Sistema Bancário em Python
 
+![Python](https://img.shields.io/badge/Python-3776AB?style=flat&logo=python&logoColor=white)
+
 Sistema bancário desenvolvido em Python com orientação a objetos. Permite cadastrar usuários, abrir contas e realizar operações financeiras como depósito, saque e consulta de extrato.
 
 ---
@@ -15,7 +17,15 @@ Sistema bancário desenvolvido em Python com orientação a objetos. Permite cad
 
 Crie o ambiente virtual
 
+```bash
+python -m venv venv
+```
+
 Ative o ambiente virtual
+
+```bash
+venv\Scripts\activate
+```
 
 Baixe as dependências registradas no requirements.txt
 
@@ -29,31 +39,7 @@ Execute o arquivo main.py
 python main.py
 ```
 
-> Os comandos devem ser executados dentro do diretório sistema_bancario_python\ .
-
----
-
-## Estrutura de Classes
-
-```
-Banco
-├── Usuario
-│   └── Endereco
-└── Conta
-```
-
-### `Endereco`
-Armazena o endereço completo de um usuário: logradouro, número, bairro, cidade e sigla do estado.
-
-### `Usuario`
-Representa um cliente do banco. Possui CPF, nome, data de nascimento e um objeto `Endereco`.
-
-### `Conta`
-Conta bancária vinculada a um `Usuario`. Armazena saldo, extrato e histórico de saques.
-
-### `Banco`
-Gerencia as coleções de usuários e contas. Responsável por cadastros e buscas.
-
+> Os comandos devem ser executados dentro do diretório python\ .
 
 
 
