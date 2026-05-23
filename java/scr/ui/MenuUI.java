@@ -1,6 +1,11 @@
+package ui;
 import java.util.List;
 import java.util.Optional;
 import java.util.Scanner;
+
+import model.Banco;
+import model.Conta;
+import model.Endereco;
 
 
 public class MenuUI {
