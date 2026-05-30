@@ -108,4 +108,4 @@ Ao iniciar, o sistema solicita e valida um CPF.
 
 ## Licença
 
-Distribuído sob a licença [MIT](LICENSE). Livre para usar, copiar, modificar e distribuir.
+Este projeto é de uso livre. Qualquer pessoa está autorizada a copiar, modificar e distribuir o código.
